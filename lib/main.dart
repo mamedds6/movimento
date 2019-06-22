@@ -1,15 +1,32 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:sensors/sensors.dart';
+
 
 List<CameraDescription> cameras;
 
 Future<void> main() async {
   cameras = await availableCameras();
   runApp(MyApp());
+}
+
+  var _userAccelerometerEvents;
+  var _userAccelerometerEventChannel;
+  var _listToUserAccelerometerEvent;
+  
+Stream<UserAccelerometerEvent> get userAccelerometerEvents {
+  if (_userAccelerometerEvents == null) {
+    _userAccelerometerEvents = _userAccelerometerEventChannel
+        .receiveBroadcastStream()
+        .map((dynamic event) =>
+            _listToUserAccelerometerEvent(event.cast<double>()));
+  }
+  return _userAccelerometerEvents;
 }
 
 class MyApp extends StatelessWidget {
@@ -35,26 +52,33 @@ class CameraApp extends StatefulWidget {
 }
 
 class _CameraAppState extends State<CameraApp> {
-  CameraController controller;
-  var _myOpacity = 0.9;
+  CameraController cameraController;
+  var _myOpacity = 0.89;
   var _myAngle = 0;
+  // var _compassX = new AccelerometerEvent(0,0,0).x;
+  // var _compassY = new AccelerometerEvent(0,0,0).y;
+  var _compassX;
+  var _compassY;
 
   @override
   void initState() {
     super.initState();
-    controller = CameraController(cameras[0], ResolutionPreset.medium);
-    controller.initialize().then((_) {
+      accelerometerEvents.listen((event) {
+        _compassX = -event.x;
+        _compassY = -event.y;
+      });
+    cameraController = CameraController(cameras[0], ResolutionPreset.medium);
+    cameraController.initialize().then((_) {
       if (!mounted) {
         return;
       }
-      setState(() {
-      });
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    cameraController?.dispose();
     super.dispose();
   }
 
@@ -71,13 +95,13 @@ Widget build(BuildContext context) {
         children: <Widget>[
             new Positioned.fill(
               child: new AspectRatio(
-                  aspectRatio: controller.value.aspectRatio,
-                  child: new CameraPreview(controller)),
+                  aspectRatio: cameraController.value.aspectRatio,
+                  child: new CameraPreview(cameraController)),
             ),
             new Positioned.fill(
               child: new AnimatedOpacity(
                 opacity: _myOpacity,
-                duration: new Duration(seconds: 3),
+                duration: new Duration(seconds: 2),
                 child: new Image.network(
                   'https://picsum.photos/3000/4000',
                   fit: BoxFit.fill
@@ -91,15 +115,28 @@ Widget build(BuildContext context) {
                     height: 300,          
                     child: FlutterLogo(),
                   ),
-                  new Transform.rotate(
+                  new Positioned(                        
+                    top: 100,
+                    left: 100,
+                    child: new Transform.rotate(
                       angle: _myAngle*(2*3.14)/360,              
-                      origin: new Offset(0, 200),        
-                      child: new Text("data"),
+                      origin: new Offset(50, 150),        
+                      child: new Text("TEXT"),
                     ),
+                  ),
+                  new Positioned(
+                    top: 20,
+                    right: 20,
+                    child: Text(
+                    _compassX.toString()+"\n"+_compassY.toString(),
+                    textAlign: TextAlign.left,
+                    style: TextStyle(fontFamily: "Arial", fontSize: 20, color: Color.fromARGB(255, 200 ,240, 220)),
+                    ),
+                  ),
                   new RaisedButton(
-                    onPressed: () {
-                      setState(() {
-                        _myOpacity = 0.0;
+                    onPressed: () async {                        
+                      accelerometerEvents.listen((event) { 
+                        setState(() {});
                       });
                     },
                     color: Color.fromARGB(111, 240, 235, 250),
@@ -111,8 +148,20 @@ Widget build(BuildContext context) {
                   )
                 ],
               ) 
-            )
-
+            ),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: FloatingActionButton(
+                onPressed: () {
+                  setState(() {
+                    _myOpacity = 0.0;
+                    _myAngle -= 20;
+                  });
+                },        
+                  tooltip: 'Switch camera',
+                  child: Icon(Icons.switch_camera),
+              ),
+            ),
           ],
         ),
       ),

@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.lime,
       ),
-      home: CameraApp(title: 'Camera Overlay Test'),
+      home: CameraApp(title: 'Camera Overlay!'),
     );
   }
 }
@@ -168,8 +168,9 @@ Widget build(BuildContext context) {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
-           _myOpacity +=0.1; 
-           _myAngle +=30;
+            if (_myOpacity <0.9)
+              _myOpacity +=0.1; 
+            _myAngle +=30;
           });
         },        
         tooltip: 'Increment',
@@ -179,7 +180,7 @@ Widget build(BuildContext context) {
   
     // if (!controller.value.isInitialized) {
     //   return Container();
-    // }
+    // }comment made from xiaomi hehe .. i wonder if yoy watch this... 123
     // return AspectRatio(
     //     aspectRatio:
     //     controller.value.aspectRatio,
